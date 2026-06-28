@@ -79,8 +79,8 @@ ok "Launcher created at ${BIN_LINK}"
 # ── Install icon ──────────────────────────────────────────────
 info "Installing application icon..."
 mkdir -p "$ICON_DIR"
-if [[ -f "$SCRIPT_DIR/${APP_ID}.svg" ]]; then
-    cp "$SCRIPT_DIR/${APP_ID}.svg" "$ICON_FILE"
+if [[ -f "$SCRIPT_DIR/assets/${APP_ID}.svg" ]]; then
+    cp "$SCRIPT_DIR/assets/${APP_ID}.svg" "$ICON_FILE"
     ok "Icon installed"
 else
     info "Icon SVG not found, skipping (will use fallback icon)"

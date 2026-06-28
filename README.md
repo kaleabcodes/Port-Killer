@@ -48,27 +48,36 @@
 
 ## 🚀 Installation
 
-### Option A — Install from Release *(recommended)*
+> Download the latest package from the [**Releases**](https://github.com/kaleabcodes/port-killer/releases/latest) page.
 
-Download the latest release, extract, and run the installer:
+### 🐧 Debian / Ubuntu / Pop!_OS / Mint (`.deb`)
 
 ```bash
-# Download latest release
-wget https://github.com/kaleabcodes/port-killer/releases/latest/download/portkiller-v1.0.0-linux.tar.gz
+sudo dpkg -i portkiller_1.0.0_all.deb
+sudo apt-get install -f    # fix any missing dependencies
+```
 
-# Extract and install
+### 🎩 Fedora / RHEL / openSUSE (`.rpm`)
+
+```bash
+sudo rpm -i portkiller-1.0.0-1.noarch.rpm
+```
+
+### 📦 Generic Linux (`.tar.gz`)
+
+```bash
 tar -xzf portkiller-v1.0.0-linux.tar.gz
 cd portkiller-v1.0.0-linux
 sudo bash install.sh
 ```
 
-After installation, launch **Port Killer** from your application menu or run:
+After installation, launch **Port Killer** from your app menu or run:
 
 ```bash
 portkiller
 ```
 
-### Option B — Run from source *(for development)*
+### 🛠️ Build from source *(for development)*
 
 ```bash
 git clone https://github.com/kaleabcodes/port-killer.git
@@ -84,6 +93,13 @@ python3 main.py
 ## 🗑️ Uninstall
 
 ```bash
+# Debian / Ubuntu
+sudo apt remove portkiller
+
+# Fedora / RHEL
+sudo rpm -e portkiller
+
+# Generic (tar.gz install)
 sudo bash uninstall.sh
 ```
 

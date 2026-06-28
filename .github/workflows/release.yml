@@ -19,53 +19,209 @@ jobs:
 
       - name: Get version from tag
         id: version
-        run: echo "VERSION=${GITHUB_REF#refs/tags/}" >> "$GITHUB_OUTPUT"
+        run: |
+          VERSION="${GITHUB_REF#refs/tags/v}"
+          echo "VERSION=${VERSION}" >> "$GITHUB_OUTPUT"
+          echo "TAG=${GITHUB_REF#refs/tags/}" >> "$GITHUB_OUTPUT"
 
-      - name: Create release archive
+      - name: Install packaging tools
+        run: |
+          sudo apt-get update -qq
+          sudo apt-get install -y -qq rpm
+
+      # ────────────────────────────────────────────────────────
+      #  Prepare shared application files
+      # ────────────────────────────────────────────────────────
+      - name: Prepare application files
+        run: |
+          mkdir -p build/app dist
+
+          cp main.py app.py window.py style.css build/app/
+          cp -r utils widgets build/app/
+
+          # Launcher script
+          cat > build/portkiller << 'LAUNCHER'
+          #!/usr/bin/env bash
+          exec /opt/portkiller/.venv/bin/python3 /opt/portkiller/main.py "$@"
+          LAUNCHER
+          # Remove leading whitespace from heredoc
+          sed -i 's/^          //' build/portkiller
+          chmod +x build/portkiller
+
+          # Desktop entry
+          cat > build/com.kaleabcodes.portkiller.desktop << 'DESKTOP'
+          [Desktop Entry]
+          Name=Port Killer
+          Comment=View and terminate processes listening on network ports
+          Exec=portkiller
+          Icon=com.kaleabcodes.portkiller
+          Terminal=false
+          Type=Application
+          Categories=System;Network;Monitor;GTK;
+          Keywords=port;kill;process;network;socket;
+          StartupNotify=true
+          DESKTOP
+          sed -i 's/^          //' build/com.kaleabcodes.portkiller.desktop
+
+          cp assets/com.kaleabcodes.portkiller.svg build/
+
+      # ────────────────────────────────────────────────────────
+      #  Build .deb (Debian / Ubuntu)
+      # ────────────────────────────────────────────────────────
+      - name: Build .deb package
         run: |
           VERSION="${{ steps.version.outputs.VERSION }}"
-          ARCHIVE_NAME="portkiller-${VERSION}-linux"
+          PKG_ROOT="build/deb/portkiller_${VERSION}_all"
 
-          mkdir -p "dist/${ARCHIVE_NAME}"
+          mkdir -p "${PKG_ROOT}/DEBIAN"
+          mkdir -p "${PKG_ROOT}/opt/portkiller"
+          mkdir -p "${PKG_ROOT}/usr/bin"
+          mkdir -p "${PKG_ROOT}/usr/share/applications"
+          mkdir -p "${PKG_ROOT}/usr/share/icons/hicolor/scalable/apps"
 
-          # Copy application source files
-          cp main.py app.py window.py style.css install.sh uninstall.sh "dist/${ARCHIVE_NAME}/"
-          cp com.kaleabcodes.portkiller.svg "dist/${ARCHIVE_NAME}/"
-          cp -r utils widgets "dist/${ARCHIVE_NAME}/"
-          cp LICENSE "dist/${ARCHIVE_NAME}/" 2>/dev/null || true
-          cp README.md "dist/${ARCHIVE_NAME}/"
+          # Control file
+          cat > "${PKG_ROOT}/DEBIAN/control" << CTRL
+          Package: portkiller
+          Version: ${VERSION}
+          Section: utils
+          Priority: optional
+          Architecture: all
+          Depends: python3 (>= 3.10), python3-venv, python3-gi, gir1.2-gtk-4.0, gir1.2-adw-1
+          Maintainer: KaleabCodes <kaleabcodes@gmail.com>
+          Homepage: https://github.com/kaleabcodes/port-killer
+          Description: View and terminate processes listening on network ports
+           Port Killer is a native GTK4 / Libadwaita desktop app for Linux.
+           It features smart search, one-click kill, system tray, and theming.
+          CTRL
+          sed -i 's/^          //' "${PKG_ROOT}/DEBIAN/control"
 
-          # Make scripts executable
-          chmod +x "dist/${ARCHIVE_NAME}/install.sh"
-          chmod +x "dist/${ARCHIVE_NAME}/uninstall.sh"
+          # Maintainer scripts
+          cp packaging/deb/postinst "${PKG_ROOT}/DEBIAN/postinst"
+          cp packaging/deb/prerm "${PKG_ROOT}/DEBIAN/prerm"
+          chmod 0755 "${PKG_ROOT}/DEBIAN/postinst"
+          chmod 0755 "${PKG_ROOT}/DEBIAN/prerm"
 
-          # Create tar.gz
-          cd dist
-          tar -czf "${ARCHIVE_NAME}.tar.gz" "${ARCHIVE_NAME}"
+          # Application files
+          cp -r build/app/* "${PKG_ROOT}/opt/portkiller/"
+          install -m 0755 build/portkiller "${PKG_ROOT}/usr/bin/portkiller"
+          install -m 0644 build/com.kaleabcodes.portkiller.desktop "${PKG_ROOT}/usr/share/applications/"
+          install -m 0644 build/com.kaleabcodes.portkiller.svg "${PKG_ROOT}/usr/share/icons/hicolor/scalable/apps/"
 
+          dpkg-deb --build --root-owner-group "${PKG_ROOT}"
+          mv "build/deb/portkiller_${VERSION}_all.deb" dist/
+
+      # ────────────────────────────────────────────────────────
+      #  Build .rpm (Fedora / RHEL / openSUSE)
+      # ────────────────────────────────────────────────────────
+      - name: Build .rpm package
+        run: |
+          VERSION="${{ steps.version.outputs.VERSION }}"
+
+          mkdir -p ~/rpmbuild/{BUILD,RPMS,SOURCES,SPECS,SRPMS}
+
+          cp -r build/app ~/rpmbuild/SOURCES/
+          cp build/portkiller ~/rpmbuild/SOURCES/
+          cp build/com.kaleabcodes.portkiller.desktop ~/rpmbuild/SOURCES/
+          cp build/com.kaleabcodes.portkiller.svg ~/rpmbuild/SOURCES/
+
+          rpmbuild -bb \
+            --define "_app_version ${VERSION}" \
+            --define "_topdir ${HOME}/rpmbuild" \
+            packaging/rpm/portkiller.spec
+
+          find ~/rpmbuild/RPMS -name "*.rpm" -exec cp {} dist/ \;
+
+      # ────────────────────────────────────────────────────────
+      #  Build .tar.gz (Generic Linux)
+      # ────────────────────────────────────────────────────────
+      - name: Build generic tarball
+        run: |
+          TAG="${{ steps.version.outputs.TAG }}"
+          ARCHIVE_NAME="portkiller-${TAG}-linux"
+
+          mkdir -p "build/tar/${ARCHIVE_NAME}"
+
+          cp main.py app.py window.py style.css "build/tar/${ARCHIVE_NAME}/"
+          cp install.sh uninstall.sh "build/tar/${ARCHIVE_NAME}/"
+          cp assets/com.kaleabcodes.portkiller.svg "build/tar/${ARCHIVE_NAME}/"
+          cp -r utils widgets "build/tar/${ARCHIVE_NAME}/"
+          cp LICENSE "build/tar/${ARCHIVE_NAME}/" 2>/dev/null || true
+          cp README.md "build/tar/${ARCHIVE_NAME}/"
+          chmod +x "build/tar/${ARCHIVE_NAME}/install.sh"
+          chmod +x "build/tar/${ARCHIVE_NAME}/uninstall.sh"
+
+          cd build/tar
+          tar -czf "../../dist/${ARCHIVE_NAME}.tar.gz" "${ARCHIVE_NAME}"
+
+      # ────────────────────────────────────────────────────────
+      #  List artifacts
+      # ────────────────────────────────────────────────────────
+      - name: List release artifacts
+        run: |
+          echo "📦 Release artifacts:"
+          ls -lh dist/
+
+      # ────────────────────────────────────────────────────────
+      #  Publish GitHub Release
+      # ────────────────────────────────────────────────────────
       - name: Create GitHub Release
         uses: softprops/action-gh-release@v2
         with:
-          name: "Port Killer ${{ steps.version.outputs.VERSION }}"
+          name: "Port Killer ${{ steps.version.outputs.TAG }}"
           body: |
-            ## 🔌 Port Killer ${{ steps.version.outputs.VERSION }}
+            ## 🔌 Port Killer ${{ steps.version.outputs.TAG }}
 
-            ### Installation
+            ### 📥 Download & Install
 
-            1. Download `portkiller-${{ steps.version.outputs.VERSION }}-linux.tar.gz` below
-            2. Extract and install:
+            | Package | Distro | Command |
+            |---------|--------|---------|
+            | `.deb` | Ubuntu, Debian, Pop!_OS, Mint | `sudo dpkg -i portkiller_${{ steps.version.outputs.VERSION }}_all.deb && sudo apt-get install -f` |
+            | `.rpm` | Fedora, RHEL, openSUSE | `sudo rpm -i portkiller-${{ steps.version.outputs.VERSION }}-1.noarch.rpm` |
+            | `.tar.gz` | Any Linux | Extract → `sudo bash install.sh` |
+
+            ---
+
+            ### 🐧 Debian / Ubuntu (`.deb`)
 
             ```bash
-            tar -xzf portkiller-${{ steps.version.outputs.VERSION }}-linux.tar.gz
-            cd portkiller-${{ steps.version.outputs.VERSION }}-linux
+            sudo dpkg -i portkiller_${{ steps.version.outputs.VERSION }}_all.deb
+            sudo apt-get install -f
+            ```
+
+            ### 🎩 Fedora / RHEL (`.rpm`)
+
+            ```bash
+            sudo rpm -i portkiller-${{ steps.version.outputs.VERSION }}-1.noarch.rpm
+            ```
+
+            ### 📦 Generic Linux (`.tar.gz`)
+
+            ```bash
+            tar -xzf portkiller-${{ steps.version.outputs.TAG }}-linux.tar.gz
+            cd portkiller-${{ steps.version.outputs.TAG }}-linux
             sudo bash install.sh
             ```
 
-            3. Launch **Port Killer** from your application menu or run `portkiller` in your terminal.
+            ---
 
-            ### Uninstall
+            ### ▶️ Launch
+
+            Open **Port Killer** from your application menu, or run:
 
             ```bash
+            portkiller
+            ```
+
+            ### 🗑️ Uninstall
+
+            ```bash
+            # Debian / Ubuntu
+            sudo apt remove portkiller
+
+            # Fedora / RHEL
+            sudo rpm -e portkiller
+
+            # Generic (tar.gz)
             sudo bash uninstall.sh
             ```
 
@@ -73,9 +229,9 @@ jobs:
 
             - 🐧 Linux with GNOME desktop
             - 🐍 Python 3.10+
-            - 🖼️ GTK4 + Libadwaita (`sudo apt install libgtk-4-dev libadwaita-1-dev gir1.2-adw-1`)
+            - 🖼️ GTK4 + Libadwaita
           files: |
-            dist/portkiller-${{ steps.version.outputs.VERSION }}-linux.tar.gz
+            dist/*
           draft: false
           prerelease: false
           generate_release_notes: true

@@ -1,0 +1,7 @@
+#!/bin/bash
+set -e
+
+# Remove virtual environment created during postinst
+rm -rf /opt/portkiller/.venv
+
+exit 0
