@@ -14,7 +14,7 @@
 ---
 
 <div align="center">
-  <video src="assets/portkiller.mp4" width="100%" autoplay loop muted controls></video>
+  <img src="assets/portkiller.gif" alt="Port Killer Demo" width="100%">
 </div>
 
 ---
