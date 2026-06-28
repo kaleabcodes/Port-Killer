@@ -8,6 +8,7 @@
 [![GTK](https://img.shields.io/badge/GTK-4.0-4A90D9?style=flat&logo=gnome&logoColor=white)](https://gtk.org)
 [![License](https://img.shields.io/badge/License-MIT-green?style=flat)](LICENSE)
 [![Platform](https://img.shields.io/badge/Platform-Linux-FCC624?style=flat&logo=linux&logoColor=black)](https://kernel.org)
+[![Release](https://img.shields.io/github/v/release/kaleabcodes/port-killer?style=flat&color=blueviolet&label=Release)](https://github.com/kaleabcodes/port-killer/releases/latest)
 
 </div>
 
@@ -34,41 +35,56 @@
 
 ## 📦 Prerequisites
 
-Before you begin, make sure you have the following installed on your system:
-
+- 🐧 **Linux** with GNOME desktop
 - 🐍 **Python** `3.10+`
 - 🖼️ **GTK4** and **Libadwaita** (usually pre-installed on GNOME desktops)
-- 📡 **`psutil`** – for reading network and process info
-- 🖼️ **`pystray`** + **`Pillow`** – for the system tray icon *(optional)*
+
+  ```bash
+  # Ubuntu / Debian — install if not already present
+  sudo apt install libgtk-4-dev libadwaita-1-dev gir1.2-adw-1
+  ```
 
 ---
 
-## 🚀 Installation & Running
+## 🚀 Installation
 
-### Step 1 — Clone the repository
+### Option A — Install from Release *(recommended)*
+
+Download the latest release, extract, and run the installer:
+
+```bash
+# Download latest release
+wget https://github.com/kaleabcodes/port-killer/releases/latest/download/portkiller-v3.0.0-linux.tar.gz
+
+# Extract and install
+tar -xzf portkiller-v3.0.0-linux.tar.gz
+cd portkiller-v3.0.0-linux
+sudo bash install.sh
+```
+
+After installation, launch **Port Killer** from your application menu or run:
+
+```bash
+portkiller
+```
+
+### Option B — Run from source *(for development)*
 
 ```bash
 git clone https://github.com/kaleabcodes/port-killer.git
 cd port-killer
-```
-
-### Step 2 — Create a virtual environment
-
-```bash
 python3 -m venv .venv
 source .venv/bin/activate
-```
-
-### Step 3 — Install dependencies
-
-```bash
 pip install psutil pystray Pillow
+python3 main.py
 ```
 
-### Step 4 — Run the app
+---
+
+## 🗑️ Uninstall
 
 ```bash
-python3 main.py
+sudo bash uninstall.sh
 ```
 
 ---

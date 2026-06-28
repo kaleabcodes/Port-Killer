@@ -1,0 +1,81 @@
+name: Release
+
+on:
+  push:
+    tags:
+      - 'v*'
+
+permissions:
+  contents: write
+
+jobs:
+  release:
+    name: Build & Publish Release
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Get version from tag
+        id: version
+        run: echo "VERSION=${GITHUB_REF#refs/tags/}" >> "$GITHUB_OUTPUT"
+
+      - name: Create release archive
+        run: |
+          VERSION="${{ steps.version.outputs.VERSION }}"
+          ARCHIVE_NAME="portkiller-${VERSION}-linux"
+
+          mkdir -p "dist/${ARCHIVE_NAME}"
+
+          # Copy application source files
+          cp main.py app.py window.py style.css install.sh uninstall.sh "dist/${ARCHIVE_NAME}/"
+          cp com.kaleabcodes.portkiller.svg "dist/${ARCHIVE_NAME}/"
+          cp -r utils widgets "dist/${ARCHIVE_NAME}/"
+          cp LICENSE "dist/${ARCHIVE_NAME}/" 2>/dev/null || true
+          cp README.md "dist/${ARCHIVE_NAME}/"
+
+          # Make scripts executable
+          chmod +x "dist/${ARCHIVE_NAME}/install.sh"
+          chmod +x "dist/${ARCHIVE_NAME}/uninstall.sh"
+
+          # Create tar.gz
+          cd dist
+          tar -czf "${ARCHIVE_NAME}.tar.gz" "${ARCHIVE_NAME}"
+
+      - name: Create GitHub Release
+        uses: softprops/action-gh-release@v2
+        with:
+          name: "Port Killer ${{ steps.version.outputs.VERSION }}"
+          body: |
+            ## 🔌 Port Killer ${{ steps.version.outputs.VERSION }}
+
+            ### Installation
+
+            1. Download `portkiller-${{ steps.version.outputs.VERSION }}-linux.tar.gz` below
+            2. Extract and install:
+
+            ```bash
+            tar -xzf portkiller-${{ steps.version.outputs.VERSION }}-linux.tar.gz
+            cd portkiller-${{ steps.version.outputs.VERSION }}-linux
+            sudo bash install.sh
+            ```
+
+            3. Launch **Port Killer** from your application menu or run `portkiller` in your terminal.
+
+            ### Uninstall
+
+            ```bash
+            sudo bash uninstall.sh
+            ```
+
+            ### Requirements
+
+            - 🐧 Linux with GNOME desktop
+            - 🐍 Python 3.10+
+            - 🖼️ GTK4 + Libadwaita (`sudo apt install libgtk-4-dev libadwaita-1-dev gir1.2-adw-1`)
+          files: |
+            dist/portkiller-${{ steps.version.outputs.VERSION }}-linux.tar.gz
+          draft: false
+          prerelease: false
+          generate_release_notes: true

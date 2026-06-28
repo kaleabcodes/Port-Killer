@@ -1,0 +1,30 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 128 128" width="128" height="128">
+  <defs>
+    <linearGradient id="bg" x1="0" y1="0" x2="1" y2="1">
+      <stop offset="0%" stop-color="#6c5ce7"/>
+      <stop offset="100%" stop-color="#a29bfe"/>
+    </linearGradient>
+    <linearGradient id="plug" x1="0" y1="0" x2="0" y2="1">
+      <stop offset="0%" stop-color="#dfe6e9"/>
+      <stop offset="100%" stop-color="#b2bec3"/>
+    </linearGradient>
+    <filter id="shadow" x="-10%" y="-10%" width="130%" height="130%">
+      <feDropShadow dx="0" dy="2" stdDeviation="3" flood-color="#2d3436" flood-opacity="0.3"/>
+    </filter>
+  </defs>
+  <!-- Background circle -->
+  <circle cx="64" cy="64" r="60" fill="url(#bg)"/>
+  <!-- Plug body -->
+  <rect x="44" y="56" width="40" height="30" rx="6" fill="url(#plug)" filter="url(#shadow)"/>
+  <!-- Plug prongs -->
+  <rect x="52" y="36" width="8" height="24" rx="3" fill="#dfe6e9"/>
+  <rect x="68" y="36" width="8" height="24" rx="3" fill="#dfe6e9"/>
+  <!-- Cord -->
+  <rect x="58" y="86" width="12" height="14" rx="4" fill="#636e72"/>
+  <!-- Kill X mark -->
+  <g stroke="#e17055" stroke-width="5" stroke-linecap="round" opacity="0.9">
+    <line x1="82" y1="30" x2="100" y2="48"/>
+    <line x1="100" y1="30" x2="82" y2="48"/>
+  </g>
+</svg>
