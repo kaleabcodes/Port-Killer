@@ -76,7 +76,7 @@ class PortKillerApp(Adw.Application):
         dlg = Adw.AboutDialog(
             application_name="Port Killer",
             application_icon="network-server-symbolic",
-            version="3.0",
+            version="1.0.0",
             comments="View and terminate listening ports on your system.",
             developer_name="KaleabCodes",
             copyright="© 2026 KaleabCodes",

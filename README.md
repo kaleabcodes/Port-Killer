@@ -54,11 +54,11 @@ Download the latest release, extract, and run the installer:
 
 ```bash
 # Download latest release
-wget https://github.com/kaleabcodes/port-killer/releases/latest/download/portkiller-v3.0.0-linux.tar.gz
+wget https://github.com/kaleabcodes/port-killer/releases/latest/download/portkiller-v1.0.0-linux.tar.gz
 
 # Extract and install
-tar -xzf portkiller-v3.0.0-linux.tar.gz
-cd portkiller-v3.0.0-linux
+tar -xzf portkiller-v1.0.0-linux.tar.gz
+cd portkiller-v1.0.0-linux
 sudo bash install.sh
 ```
 
